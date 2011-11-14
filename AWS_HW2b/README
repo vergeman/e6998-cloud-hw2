@@ -1,0 +1,84 @@
+Cloud Computing
+HW2
+akv2001
+README
+
+This project was created using Eclipse indigo, with the AWS Plugin.
+
+Please make sure to enter your appropriate information in ./data/AwsCredentials.properties.
+
+==STRUCTURE==
+
+The project package basic structure is as follows:
+
+org.akv2001:
+	Manager.java: main driver class
+org.akv2001.aws:
+	series of wrapper classes for the AWS API
+org.akv2001.ssh
+	ssh classes utilizing jsch library
+org.akv2001.users
+	serialized users class for cheap "database"
+
+./lib:
+	contains the jsch ssh library
+
+./data:
+	contains various user data files
+		 user.ser - a serialized "database" file
+		 *.pem - private keys for generated users
+		 test.pl - perl script to burn cpu cycles
+
+==EXECUTION==
+
+The program checks for the presence of the ./data/users.ser database
+file.  If the the is not present, the program will proceed to
+"bootstrap" itself and create two users, private keys and all.
+
+Upon successful instantiation of the VM's, volume creation and S3
+creation, SSH connections are made to upload and then execute
+./data/test.pl.
+
+The program then enters a "Monitor" loop, checking for the cpu status
+of the instantiated VMs.  If average CPU utlization is below 2% over
+the 10 min period, or End of Day (EOD) is reached, the VM will enter
+the shutdown phase; detaching volumes, saving a snapshot and
+eventually terminating the instance.  ID's, ip's, etc.  are saved to a
+serialized user db file (data/users.ser) for reference during the
+restoration/wake up process.
+
+Snapshots are taken at every stage, in the real-life scenario that
+data changes.  The latest snapshot will be the one used on
+restoration.
+
+
+Wake up is scheduled for the subsequent wake up period, upon which it
+will load the file, populate the needed variables and jump into the
+monitor loop.
+
+
+==CAVEATS==
+
+Simplicity was favored over spead, so calls to AWS block - with
+repeated loops/calls to ensure instantation.  This makes for a slow
+but straightforward program.
+
+The responses from the CloudWatch are sometimes inconsistent and tend
+to take a while.
+
+Please pay attention to user limits - exceeding elastic ip's or other
+limits can result in errors.
+
+sigh.  I had a lot of difficulty with this assignment.  
+
+
+Verification Help:
+
+EOD is defined by the wake_hour - end_hour ranges in Manager.java.
+You can change these values for convenience.  Sleep dates are saved
+in the "db", such that waking occurs on the next "wake period."
+
+Also DB.java has some functions to do a quick dirty modification of DB
+values, in case you want to set wake up values earlier.  The commented
+out lines show instances of code that can changes the values to spoof
+a "next day" run.
